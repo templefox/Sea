@@ -44,7 +44,7 @@ public class Storekeeper {
 		String rs =result.getBody();
 		JsonElement element = Json.parse(rs);
 		JsonArray array = element.getAsJsonObject().get("results").getAsJsonArray();
-		return array.toString() + "hahaha";
+		return array.toString();
 	}
 	
 	@GET

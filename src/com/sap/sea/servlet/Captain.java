@@ -11,6 +11,7 @@ import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.DockerException;
 import com.spotify.docker.client.messages.Image;
+import com.sun.jndi.url.corbaname.corbanameURLContextFactory;
 
 @Path("/captain")
 public class Captain {
@@ -19,11 +20,9 @@ public class Captain {
 	@Path("/test")
 	@Produces("text/plain")
 	public String test(){
-		/*DockerClient dockerClient= new DefaultDockerClient("http://10.58.136.164:4567");
-		
+		DockerClient dockerClient= new DefaultDockerClient("http://10.58.136.164:4567");
 		try {
 			List<Image> images = dockerClient.listImages();
-			
 			for (Image image : images) {
 				ImmutableList<String> tags = image.repoTags();
 				for (String tag : tags) {
@@ -35,7 +34,7 @@ public class Captain {
 			e.printStackTrace();
 		} finally{
 			dockerClient.close();
-		}*/
-		return "avd";
+		}
+		return "error";
 	}
 }
