@@ -21,35 +21,21 @@ import com.sap.sea.util.Props;
 
 @Path("/storekeeper")
 public class Storekeeper {
-	@DefaultValue("json")
-	@QueryParam("format")
-	String format;
-	
-	@DefaultValue("library")
-	@QueryParam("q")
-	String query;
-	
 	@Context
 	ServletContext context;
-	
+
 	@GET
 	@Path("/images")
-	@Produces({"text/plain","application/json"})
-	public String searchImages() throws FileNotFoundException, IOException{
-		Props.load(
-				new FileInputStream(context.getRealPath("WEB-INF") + "/config.properties"));
+	@Produces({ "text/plain", "application/json" })
+	public String searchImages(@DefaultValue("library") @QueryParam("q") String query,
+			@DefaultValue("json") @QueryParam("format") String format) throws FileNotFoundException, IOException {
+		Props.load(new FileInputStream(context.getRealPath("WEB-INF") + "/config.properties"));
 		String hub = Props.instance().getProperty("hub");
 
-		HttpResult result = HttpBot.get("http://"+hub+"/v1/search?q="+query, null, null);
-		String rs =result.getBody();
+		HttpResult result = HttpBot.get("http://" + hub + "/v1/search?q=" + query, null, null);
+		String rs = result.getBody();
 		JsonElement element = Json.parse(rs);
 		JsonArray array = element.getAsJsonObject().get("results").getAsJsonArray();
 		return array.toString();
-	}
-	
-	@GET
-	@Path("/test")
-	public String test(){
-		return "avd";
 	}
 }
