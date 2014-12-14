@@ -1,4 +1,4 @@
-package com.sap.sea.servlet;
+package com.sap.sea;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
