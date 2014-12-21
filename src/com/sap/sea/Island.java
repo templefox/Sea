@@ -44,25 +44,29 @@ public class Island {
 	@GET
 	@Path("{any: .*}")
 	public Response getRedirect(@PathParam("any") String any) throws URISyntaxException {
-		return Response.temporaryRedirect(new URI("http://" + ip + "/" + any)).build();
+		return redirect(any);
 	}
 
 	@POST
 	@Path("{any: .*}")
 	public Response postRedirect(@PathParam("any") String any) throws URISyntaxException {
-		return Response.temporaryRedirect(new URI("http://" + ip + "/" + any)).build();
+		return redirect(any);
 	}
 
 	@PUT
 	@Path("{any: .*}")
 	public Response putRedirect(@PathParam("any") String any) throws URISyntaxException {
-		return Response.temporaryRedirect(new URI("http://" + ip + "/" + any)).build();
+		return redirect(any);
 	}
 
 	@DELETE
 	@Path("{any: .*}")
 	public Response deleteRedirect(@PathParam("any") String any) throws URISyntaxException {
-		return Response.temporaryRedirect(new URI("http://" + ip + "/" + any)).build();
+		return redirect(any);
+	}
+
+	private Response redirect(String subPath) throws URISyntaxException {
+		return Response.temporaryRedirect(new URI("http://" + ip + "/" + subPath)).build();
 	}
 
 	/*
