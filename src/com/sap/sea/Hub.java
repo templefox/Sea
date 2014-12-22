@@ -1,12 +1,9 @@
 package com.sap.sea;
 
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Properties;
-
 import javax.inject.Singleton;
 import javax.servlet.ServletContext;
 import javax.ws.rs.DELETE;
@@ -63,25 +60,25 @@ public class Hub {
 	}
 	
 	@GET
-	@Path("{any: v1.*}")
+	@Path("{any: v1/.*}")
 	public Response getRedirect(@PathParam("any") String any) throws URISyntaxException {
 		return Response.temporaryRedirect(new URI("http://" + hubip + "/" + any)).build();
 	}
 
 	@POST
-	@Path("{any: /v1/.*}")
+	@Path("{any: v1/.*}")
 	public Response postRedirect(@PathParam("any") String any) throws URISyntaxException {
 		return Response.temporaryRedirect(new URI("http://" + hubip + "/" + any)).build();
 	}
 
 	@PUT
-	@Path("{any: /v1/.*}")
+	@Path("{any: v1/.*}")
 	public Response putRedirect(@PathParam("any") String any) throws URISyntaxException {
 		return Response.temporaryRedirect(new URI("http://" + hubip + "/" + any)).build();
 	}
 
 	@DELETE
-	@Path("{any: /v1/.*}")
+	@Path("{any: v1/.*}")
 	public Response deleteRedirect(@PathParam("any") String any) throws URISyntaxException {
 		return Response.temporaryRedirect(new URI("http://" + hubip + "/" + any)).build();
 	}
