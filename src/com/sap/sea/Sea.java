@@ -3,7 +3,6 @@ package com.sap.sea;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Enumeration;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -13,7 +12,6 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.core.Context;
@@ -24,12 +22,8 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import redis.clients.jedis.Jedis;
 
-import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.google.gson.reflect.TypeToken;
 
 @Path("/")
 @Singleton
@@ -43,7 +37,9 @@ public class Sea {
 	public void initialize(ServletContext context) {
 		String host = context.getInitParameter("dao.host");
 		String port = context.getInitParameter("dao.port");
-		setJedis(new Jedis(host, Integer.valueOf(port)));
+		Jedis jedis = new Jedis(host, Integer.valueOf(port));
+		jedis.select(0);
+		setJedis(jedis);
 
 		readIslandsFromRedis();
 	}
@@ -52,19 +48,21 @@ public class Sea {
 		try {
 			Set<String> loadedIslands = jedis.smembers("ISLANDS");
 			for (String string : loadedIslands) {
-				System.out.println(string);
 				Island island = mapper.readValue(string, Island.class);
-				islands.put(island.getIp(), island);
+				if (island.check()) {
+					islands.put(island.getIp(), island);					
+				}
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 
-	@Path("/navigator/")
-	public Island get() {
+	@Path("/navigator")
+	public Island navigator() {
 		for (String key : islands.keySet()) {
 			Island island = islands.get(key);
+			island.enableShell(false);
 			if (island.available()) {
 				return island;
 			}
@@ -75,6 +73,7 @@ public class Sea {
 	@Path("/island/{ip}")
 	public Island getIsland(@PathParam("ip") String ip) {
 		Island island = islands.get(ip);
+		island.enableShell(true);
 		return island;
 	}
 
@@ -82,7 +81,7 @@ public class Sea {
 	@Path("/islands/list")
 	public Response listIslands() {
 		try {
-			return Response.ok(mapper.writeValueAsString(islands)).build();
+			return Response.ok(mapper.writeValueAsString(islands.keySet())).build();
 		} catch (JsonProcessingException e) {
 			return returnException(e);
 		}
@@ -90,7 +89,7 @@ public class Sea {
 
 	@POST
 	@Path("/islands/list")
-	@Consumes({ MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN })
+	@Consumes({ MediaType.APPLICATION_JSON,MediaType.TEXT_PLAIN })
 	public Response putIsland(Island island) {
 		try {
 			if (island.check()) {
@@ -103,11 +102,6 @@ public class Sea {
 		} catch (JsonProcessingException e) {
 			return returnException(e);
 		}
-	}
-
-	private Response returnException(JsonProcessingException e) {
-		e.printStackTrace();
-		return Response.serverError().entity(ExceptionUtils.getStackTrace(e)).build();
 	}
 
 	@DELETE
@@ -144,6 +138,11 @@ public class Sea {
 	@Path("/hub")
 	public Class<Hub> getHub() {
 		return Hub.class;
+	}
+
+	private Response returnException(JsonProcessingException e) {
+		e.printStackTrace();
+		return Response.serverError().entity(ExceptionUtils.getStackTrace(e)).build();
 	}
 
 	public static Jedis getJedis() {
