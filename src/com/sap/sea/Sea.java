@@ -1,6 +1,8 @@
 package com.sap.sea;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Set;
@@ -24,6 +26,8 @@ import redis.clients.jedis.Jedis;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sap.sea.selector.RandomSelector;
+import com.sap.sea.selector.Selector;
 
 @Path("/")
 @Singleton
@@ -58,19 +62,24 @@ public class Sea {
 		}
 	}
 
-	@Path("/navigator")
-	public Island navigator() {
-		for (String key : islands.keySet()) {
-			Island island = islands.get(key);
-			island.enableShell(false);
-			if (island.available()) {
-				return island;
-			}
+	@Path("/selector/{name}")
+	public Selector navigator(@PathParam("name") String name) {
+		String realName = "com.sap.sea.selector."+Character.toUpperCase(name.charAt(0))+name.substring(1)+"Selector";
+		System.out.println(realName);
+		System.out.println(RandomSelector.class.getName());
+		try {
+			Class<? extends Selector> selector = (Class<? extends Selector>) Class.forName(realName);
+			Constructor<? extends Selector> constructor =(Constructor<Selector>) selector.getConstructor(TreeMap.class);
+			return constructor.newInstance(islands);
+			
+		} catch (ClassNotFoundException | NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+			e.printStackTrace();
+			return null;
 		}
-		return null;
+		
 	}
 
-	@Path("/island/{ip}")
+	@Path("/island/{ip:[0-9:\\.]*}")
 	public Island getIsland(@PathParam("ip") String ip) {
 		Island island = islands.get(ip);
 		island.enableShell(true);
@@ -140,7 +149,7 @@ public class Sea {
 		return Hub.class;
 	}
 
-	private Response returnException(JsonProcessingException e) {
+	private Response returnException(Exception e) {
 		e.printStackTrace();
 		return Response.serverError().entity(ExceptionUtils.getStackTrace(e)).build();
 	}

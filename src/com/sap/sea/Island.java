@@ -12,11 +12,17 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.core.Response;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 public class Island {
 	private String ip;
 	private String user;
 	private String pass;
+	
+	@JsonIgnore
 	private Docker docker;
+
+	@JsonIgnore
 	private Node node;
 	
 	private boolean enableShell = false;
@@ -73,14 +79,24 @@ public class Island {
 	}
 
 	public boolean available() {
-		try {
-			String total = node.runSh(Node.FREE_GREP_MEM_AWK_PRINT_$2);
-			String used = node.runSh(Node.FREE_GREP_MEM_AWK_PRINT_$3);
+		/*try {
+			//String total = node.runSh(Node.FREE_GREP_MEM_AWK_PRINT_$2);
+			//String used = node.runSh(Node.FREE_GREP_MEM_AWK_PRINT_$3);
 			
 		} catch (IOException e) {
 			e.printStackTrace();
-		}
+		}*/
 		return true;
+	}
+
+	public boolean checkMem(Integer mem) {
+		try {
+			String free = node.runSh(Node.FREE_GREP_MEM_AWK_PRINT_$4);
+			return Integer.valueOf(free.replace(System.getProperty("line.separator"), ""))>mem*1024;
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return false;
 	}
 
 }

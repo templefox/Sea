@@ -8,7 +8,7 @@
 
 	<context-param>
 		<param-name>dao.host</param-name>
-		<param-value>192.168.1.106</param-value>
+		<param-value>10.58.77.129</param-value>
 	</context-param>
 
 	<context-param>
@@ -22,7 +22,7 @@
 		<servlet-class>org.glassfish.jersey.servlet.ServletContainer</servlet-class>
 		<init-param>
 			<param-name>jersey.config.server.provider.packages</param-name>
-			<param-value>com.sap.sea</param-value>
+			<param-value>com.sap.sea,com.sap.sea.selector</param-value>
 		</init-param>
 		<init-param>
 			<param-name>com.sun.jersey.api.json.POJOMappingFeature</param-name>

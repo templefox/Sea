@@ -20,13 +20,18 @@ import com.trilead.ssh2.StreamGobbler;
 public class Node {
 	public static final String FREE_GREP_MEM_AWK_PRINT_$3 = "free | grep Mem: | awk  '{print $3}'";
 	public static final String FREE_GREP_MEM_AWK_PRINT_$2 = "free | grep Mem: | awk  '{print $2}'";
-	public static final String FREE_GREP_MEM_AWK_PRINT_$2_$3 = "free | grep Mem: | awk  '{print $2/$3 }'";
+	public static final String FREE_GREP_MEM_AWK_PRINT_$2_$3 = "free | grep Mem: | awk  '{print $3/$2 }'";
+	public static final String FREE_GREP_MEM_AWK_PRINT_$4 = "free | grep Mem: | awk  '{print $4 }'";
+
+	
+	public Connection connection;
+
 	private Island island;
 
 	public Node(Island island) {
 		this.island = island;
 	}
-	
+
 	@GET
 	@Path("/call")
 	public Response call(@QueryParam("sh") String sh) {
@@ -38,10 +43,10 @@ public class Node {
 			return Response.serverError().entity(ExceptionUtils.getStackTrace(e)).build();
 		}
 	}
-	
+
 	@GET
 	@Path("mem/usage")
-	public Response memUsage(){
+	public Response memUsage() {
 		try {
 			return Response.ok(runSh(FREE_GREP_MEM_AWK_PRINT_$2_$3)).build();
 		} catch (IOException e) {
@@ -49,10 +54,10 @@ public class Node {
 			return Response.serverError().entity(ExceptionUtils.getStackTrace(e)).build();
 		}
 	}
-	
+
 	@GET
 	@Path("mem/total")
-	public Response memTotal(){
+	public Response memTotal() {
 		try {
 			return Response.ok(runSh(FREE_GREP_MEM_AWK_PRINT_$2)).build();
 		} catch (IOException e) {
@@ -60,10 +65,10 @@ public class Node {
 			return Response.serverError().entity(ExceptionUtils.getStackTrace(e)).build();
 		}
 	}
-	
+
 	@GET
 	@Path("mem/used")
-	public Response memUsed(){
+	public Response memUsed() {
 		try {
 			return Response.ok(runSh(FREE_GREP_MEM_AWK_PRINT_$3)).build();
 		} catch (IOException e) {
@@ -73,16 +78,17 @@ public class Node {
 	}
 
 	public String runSh(String sh) throws IOException {
-		String  ip = island.getIp();
-		Connection connection = new Connection(ip.substring(0,ip.indexOf(":")));
-		connection.connect();
-
-		connection.authenticateWithPassword(island.getUser(), island.getPass());
-
+		String ip = island.getIp();
+		if (connection == null) {
+			connection = new Connection(ip.substring(0, ip.indexOf(":")));
+			connection.connect();
+			connection.authenticateWithPassword(island.getUser(), island.getPass());
+		}
+		
 		Session session = connection.openSession();
 
 		session.execCommand(sh);
-
+		
 		InputStream inputStream = new StreamGobbler(session.getStdout());
 		BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
 
@@ -92,12 +98,12 @@ public class Node {
 			if (line == null)
 				break;
 			builder.append(line);
-			builder.append("\r\n");
+			builder.append(System.getProperty("line.separator"));
 		}
 
 		br.close();
 		session.close();
-		connection.close();
+
 		return builder.toString();
 	}
 
