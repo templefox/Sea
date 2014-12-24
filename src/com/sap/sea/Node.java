@@ -76,6 +76,17 @@ public class Node {
 			return Response.serverError().entity(ExceptionUtils.getStackTrace(e)).build();
 		}
 	}
+	
+	@GET
+	@Path("mem/free")
+	public Response memFree() {
+		try {
+			return Response.ok(runSh(FREE_GREP_MEM_AWK_PRINT_$4)).build();
+		} catch (IOException e) {
+			e.printStackTrace();
+			return Response.serverError().entity(ExceptionUtils.getStackTrace(e)).build();
+		}
+	}
 
 	public String runSh(String sh) throws IOException {
 		String ip = island.getIp();
@@ -93,7 +104,8 @@ public class Node {
 		BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
 
 		StringBuilder builder = new StringBuilder();
-		while (true) {
+		builder.append(br.readLine());
+		while (true) {			
 			String line = br.readLine();
 			if (line == null)
 				break;

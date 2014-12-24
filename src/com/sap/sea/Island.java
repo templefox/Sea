@@ -92,7 +92,7 @@ public class Island {
 	public boolean checkMem(Integer mem) {
 		try {
 			String free = node.runSh(Node.FREE_GREP_MEM_AWK_PRINT_$4);
-			return Integer.valueOf(free.replace(System.getProperty("line.separator"), ""))>mem*1024;
+			return Integer.valueOf(free)>mem*1024;
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
