@@ -23,6 +23,7 @@ import javax.ws.rs.core.Response;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.exceptions.JedisConnectionException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -34,27 +35,33 @@ import com.sap.sea.selector.Selector;
 public class Sea {
 	final private TreeMap<String, Island> islands = new TreeMap<String, Island>();
 	private static Jedis jedis;
-
+	private static String jhost;
+	private static String jport;
 	private ObjectMapper mapper = new ObjectMapper();
 
 	@Context
-	public void initialize(ServletContext context) {
-		String host = context.getInitParameter("dao.host");
-		String port = context.getInitParameter("dao.port");
-		Jedis jedis = new Jedis(host, Integer.valueOf(port));
-		jedis.select(0);
-		setJedis(jedis);
+	public void initialize(ServletContext context) throws Exception {
+		jhost = context.getInitParameter("dao.host");
+		jport = context.getInitParameter("dao.port");
+		try {
 
-		readIslandsFromRedis();
+			Jedis jedis = new Jedis(jhost, Integer.valueOf(jport));
+			jedis.select(1);
+			setJedis(jedis);
+
+			readIslandsFromRedis();
+		} catch (JedisConnectionException e) {
+			throw new Exception("Jedis connect error", e);
+		}
 	}
 
 	private void readIslandsFromRedis() {
 		try {
-			Set<String> loadedIslands = jedis.smembers("ISLANDS");
+			Set<String> loadedIslands = getJedis().smembers("ISLANDS");
 			for (String string : loadedIslands) {
 				Island island = mapper.readValue(string, Island.class);
 				if (island.check()) {
-					islands.put(island.getIp(), island);					
+					islands.put(island.getIp(), island);
 				}
 			}
 		} catch (IOException e) {
@@ -64,19 +71,20 @@ public class Sea {
 
 	@Path("/selector/{name}")
 	public Selector navigator(@PathParam("name") String name) {
-		String realName = "com.sap.sea.selector."+Character.toUpperCase(name.charAt(0))+name.substring(1)+"Selector";
-		System.out.println(realName);
-		System.out.println(RandomSelector.class.getName());
+		String realName = "com.sap.sea.selector." + Character.toUpperCase(name.charAt(0)) + name.substring(1)
+				+ "Selector";
 		try {
 			Class<? extends Selector> selector = (Class<? extends Selector>) Class.forName(realName);
-			Constructor<? extends Selector> constructor =(Constructor<Selector>) selector.getConstructor(TreeMap.class);
+			Constructor<? extends Selector> constructor = (Constructor<Selector>) selector
+					.getConstructor(TreeMap.class);
 			return constructor.newInstance(islands);
-			
-		} catch (ClassNotFoundException | NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+
+		} catch (ClassNotFoundException | NoSuchMethodException | SecurityException | InstantiationException
+				| IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 			e.printStackTrace();
 			return null;
 		}
-		
+
 	}
 
 	@Path("/island/{ip:[0-9:\\.]*}")
@@ -98,11 +106,11 @@ public class Sea {
 
 	@POST
 	@Path("/islands/list")
-	@Consumes({ MediaType.APPLICATION_JSON,MediaType.TEXT_PLAIN })
+	@Consumes({ MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN })
 	public Response putIsland(Island island) {
 		try {
 			if (island.check()) {
-				jedis.sadd("ISLANDS", mapper.writeValueAsString(island));
+				getJedis().sadd("ISLANDS", mapper.writeValueAsString(island));
 				islands.put(island.getIp(), island);
 				return Response.ok().build();
 			} else {
@@ -119,7 +127,7 @@ public class Sea {
 		try {
 			Island island = islands.remove(ip);
 			if (island != null) {
-				jedis.srem("ISLANDS", mapper.writeValueAsString(island));
+				getJedis().srem("ISLANDS", mapper.writeValueAsString(island));
 				return Response.ok().build();
 			} else {
 				return Response.serverError().entity("Wrong Format").build();
@@ -155,6 +163,11 @@ public class Sea {
 	}
 
 	public static Jedis getJedis() {
+		if (!jedis.ping().equals("PONE")) {
+			Jedis jedis = new Jedis(jhost, Integer.valueOf(jport));
+			jedis.select(1);
+			setJedis(jedis);
+		}
 		return jedis;
 	}
 

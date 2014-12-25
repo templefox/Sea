@@ -46,6 +46,14 @@ public class Island {
 		}
 	}
 	
+	@GET
+	@Path("/ping")
+	public String ping(){
+		return "pong";
+	}
+	
+	
+	
 	public void enableShell(boolean isEnabled){
 		enableShell = isEnabled;
 	}

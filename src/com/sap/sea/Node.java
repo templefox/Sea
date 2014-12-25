@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
+import javax.security.sasl.AuthenticationException;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -90,10 +91,21 @@ public class Node {
 
 	public String runSh(String sh) throws IOException {
 		String ip = island.getIp();
+		boolean auth = false;
 		if (connection == null) {
-			connection = new Connection(ip.substring(0, ip.indexOf(":")));
-			connection.connect();
-			connection.authenticateWithPassword(island.getUser(), island.getPass());
+			try {
+				connection = new Connection(ip.substring(0, ip.indexOf(":")));
+				connection.connect();
+				auth  = connection.authenticateWithPassword(island.getUser(), island.getPass());			
+			} catch (IOException e) {
+				e.printStackTrace();
+				connection = null;
+				throw new IOException("Please config the /etc/ssh/sshd_config and restart sshd", e);
+			}
+			if (!auth) {
+				connection = null;
+				throw new AuthenticationException("Wrong password");
+			}
 		}
 		
 		Session session = connection.openSession();
