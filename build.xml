@@ -77,6 +77,10 @@
     </target>
 	
 	<target depends="build-project" name="deploy">
+		<delete dir="/sea/ROOT">
+		<mkdir dir="/sea/ROOT"/>
+		<mkdir dir="/sea/ROOT/WEB-INF"/>
+		<mkdir dir="/sea/ROOT/META-INF"/>
 		<copy todir="/sea/ROOT">
 			<fileset dir = "./WebContent">
 			</fileset>
