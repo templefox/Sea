@@ -88,6 +88,17 @@ public class Node {
 			return Response.serverError().entity(ExceptionUtils.getStackTrace(e)).build();
 		}
 	}
+	
+	@GET
+	@Path("hostname")
+	public Response hostname(){
+		try {
+			return Response.ok(runSh("hostname")).build();
+		} catch (IOException e) {
+			e.printStackTrace();
+			return Response.serverError().entity(ExceptionUtils.getStackTrace(e)).build();
+		}
+	}
 
 	public String runSh(String sh) throws IOException {
 		String ip = island.getIp();

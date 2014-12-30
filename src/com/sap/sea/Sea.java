@@ -45,9 +45,7 @@ public class Sea {
 		jport = context.getInitParameter("dao.port");
 		try {
 
-			Jedis jedis = new Jedis(jhost, Integer.valueOf(jport));
-			jedis.select(1);
-			setJedis(jedis);
+			connectJedis();
 
 			readIslandsFromRedis();
 		} catch (JedisConnectionException e) {
@@ -163,12 +161,20 @@ public class Sea {
 	}
 
 	public static Jedis getJedis() {
-		if (!jedis.ping().equals("PONE")) {
-			Jedis jedis = new Jedis(jhost, Integer.valueOf(jport));
-			jedis.select(1);
-			setJedis(jedis);
+		try {
+			if (!jedis.ping().equals("PONE")) {
+				connectJedis();
+			}			
+		} catch (Exception e) {
+			connectJedis();
 		}
 		return jedis;
+	}
+
+	private static void connectJedis() {
+		Jedis jedis = new Jedis(jhost, Integer.valueOf(jport));
+		jedis.select(1);
+		setJedis(jedis);
 	}
 
 	private static void setJedis(Jedis jedis) {
