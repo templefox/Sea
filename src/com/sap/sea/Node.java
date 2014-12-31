@@ -8,11 +8,15 @@ import java.io.InputStreamReader;
 import javax.security.sasl.AuthenticationException;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Response;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.glassfish.jersey.server.ChunkedOutput;
 
 import com.trilead.ssh2.Connection;
 import com.trilead.ssh2.Session;
@@ -24,7 +28,6 @@ public class Node {
 	public static final String FREE_GREP_MEM_AWK_PRINT_$2_$3 = "free | grep Mem: | awk  '{print $3/$2 }'";
 	public static final String FREE_GREP_MEM_AWK_PRINT_$4 = "free | grep Mem: | awk  '{print $4 }'";
 
-	
 	public Connection connection;
 
 	private Island island;
@@ -77,7 +80,7 @@ public class Node {
 			return Response.serverError().entity(ExceptionUtils.getStackTrace(e)).build();
 		}
 	}
-	
+
 	@GET
 	@Path("mem/free")
 	public Response memFree() {
@@ -88,16 +91,49 @@ public class Node {
 			return Response.serverError().entity(ExceptionUtils.getStackTrace(e)).build();
 		}
 	}
-	
+
 	@GET
 	@Path("hostname")
-	public Response hostname(){
+	public Response hostname() {
 		try {
 			return Response.ok(runSh("hostname")).build();
 		} catch (IOException e) {
 			e.printStackTrace();
 			return Response.serverError().entity(ExceptionUtils.getStackTrace(e)).build();
 		}
+	}
+
+	@POST
+	@Path("build")
+	public void build(final String buildPath,@Suspended final AsyncResponse asyncResponse) {
+		new Thread() {
+			public void run() {
+				try {
+					String a = runSh("cd " + buildPath + " && docker build - < Dockerfile");
+					asyncResponse.resume(a);
+				} catch (IOException e) {
+					e.printStackTrace();
+					asyncResponse.resume(e);
+				}
+			}
+		}.start();
+
+	}
+
+	@POST
+	@Path("async")
+	public void async(final String buildPath,@Suspended final AsyncResponse asyncResponse) {
+		new Thread() {
+			public void run() {
+				try {
+					asyncResponse.resume(runSh("cd " + buildPath + " && docker build - < Dockerfile"));
+				} catch (IOException e) {
+					e.printStackTrace();
+					asyncResponse.resume(e);
+				}
+			}
+		}.start();
+
 	}
 
 	public String runSh(String sh) throws IOException {
@@ -107,7 +143,7 @@ public class Node {
 			try {
 				connection = new Connection(ip.substring(0, ip.indexOf(":")));
 				connection.connect();
-				auth  = connection.authenticateWithPassword(island.getUser(), island.getPass());			
+				auth = connection.authenticateWithPassword(island.getUser(), island.getPass());
 			} catch (IOException e) {
 				e.printStackTrace();
 				connection = null;
@@ -118,17 +154,24 @@ public class Node {
 				throw new AuthenticationException("Wrong password");
 			}
 		}
-		
-		Session session = connection.openSession();
+
+		Session session = null;
+		try {
+			session = connection.openSession();
+		} catch (IllegalStateException e) {
+			connection = null;
+			e.printStackTrace();
+			throw new AuthenticationException("Unable to authenticate");
+		}
 
 		session.execCommand(sh);
-		
+
 		InputStream inputStream = new StreamGobbler(session.getStdout());
 		BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
 
 		StringBuilder builder = new StringBuilder();
 		builder.append(br.readLine());
-		while (true) {			
+		while (true) {
 			String line = br.readLine();
 			if (line == null)
 				break;

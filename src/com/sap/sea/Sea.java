@@ -88,7 +88,9 @@ public class Sea {
 	@Path("/island/{ip:[0-9:\\.]*}")
 	public Island getIsland(@PathParam("ip") String ip) {
 		Island island = islands.get(ip);
-		island.enableShell(true);
+		if (island!=null) {
+			island.enableShell(true);			
+		}
 		return island;
 	}
 
