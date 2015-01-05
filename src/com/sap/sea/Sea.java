@@ -21,6 +21,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.omg.CORBA.PUBLIC_MEMBER;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.exceptions.JedisConnectionException;
@@ -38,6 +39,7 @@ public class Sea {
 	private static String jhost;
 	private static String jport;
 	private ObjectMapper mapper = new ObjectMapper();
+	private static final String VERSION="0.5";
 
 	@Context
 	public void initialize(ServletContext context) throws Exception {
@@ -51,6 +53,12 @@ public class Sea {
 		} catch (JedisConnectionException e) {
 			throw new Exception("Jedis connect error", e);
 		}
+	}
+	
+	@GET
+	@Path("/version")
+	public String version(){
+		return VERSION;
 	}
 
 	private void readIslandsFromRedis() {
