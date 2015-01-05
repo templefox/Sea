@@ -13,12 +13,16 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.client.Entity;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.glassfish.jersey.client.JerseyClient;
 import org.glassfish.jersey.client.JerseyClientBuilder;
 import org.glassfish.jersey.client.JerseyWebTarget;
+import org.objectweb.asm.tree.MultiANewArrayInsnNode;
 
 public class Docker {
 	private Island island;
@@ -29,33 +33,39 @@ public class Docker {
 
 	@GET
 	@Path("{any: .*}")
-	public Response getRedirect(@PathParam("any") String any) throws URISyntaxException {
-		return redirectProxy(any,HttpMethod.GET,null);
+	public Response getRedirect(@PathParam("any") String any, @Context UriInfo info) throws URISyntaxException {
+		return redirectProxy(any, HttpMethod.GET, null, info);
 	}
 
 	@POST
 	@Path("{any: .*}")
-	public Response postRedirect(String entity,@PathParam("any") String any) throws URISyntaxException {
-		return redirectProxy(any, HttpMethod.POST, Entity.text(entity));
+	public Response postRedirect(String entity, @PathParam("any") String any, @Context UriInfo info)
+			throws URISyntaxException {
+		return redirectProxy(any, HttpMethod.POST, Entity.json(entity), info);
 	}
 
 	@PUT
 	@Path("{any: .*}")
-	public Response putRedirect(String entity,@PathParam("any") String any) throws URISyntaxException {
-		return redirectProxy(any, HttpMethod.PUT, Entity.text(entity));
+	public Response putRedirect(String entity, @PathParam("any") String any, @Context UriInfo info)
+			throws URISyntaxException {
+		return redirectProxy(any, HttpMethod.PUT, Entity.json(entity), info);
 	}
 
 	@DELETE
 	@Path("{any: .*}")
-	public Response deleteRedirect(@PathParam("any") String any) throws URISyntaxException {
-		return redirectProxy(any,HttpMethod.DELETE,null);
+	public Response deleteRedirect(@PathParam("any") String any, @Context UriInfo info) throws URISyntaxException {
+		return redirectProxy(any, HttpMethod.DELETE, null, info);
 	}
 
-	private Response redirectProxy(String any,String method,Entity<?> entity) throws URISyntaxException {
+	private Response redirectProxy(String any, String method, Entity<?> entity, UriInfo info) throws URISyntaxException {
 		try {
 			JerseyClient client = JerseyClientBuilder.createClient();
 			JerseyWebTarget webTarget = client.target(new URI("http://" + island.getIp() + "/" + any));
-			Response response = webTarget.request().async().method(method,entity).get();
+			MultivaluedMap<String, String> map = info.getQueryParameters();
+			for (String key : map.keySet()) {
+				webTarget = webTarget.queryParam(key, map.get(key).toArray());
+			}
+			Response response = webTarget.request().async().method(method, entity).get();
 			return response;
 		} catch (InterruptedException | ExecutionException e) {
 			e.printStackTrace();

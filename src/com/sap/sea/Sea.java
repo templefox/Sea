@@ -77,6 +77,7 @@ public class Sea {
 
 	@Path("/selector/{name}")
 	public Selector navigator(@PathParam("name") String name) {
+		readIslandsFromRedis();
 		String realName = "com.sap.sea.selector." + Character.toUpperCase(name.charAt(0)) + name.substring(1)
 				+ "Selector";
 		try {
@@ -95,6 +96,7 @@ public class Sea {
 
 	@Path("/island/{ip:[0-9:\\.]*}")
 	public Island getIsland(@PathParam("ip") String ip) {
+		readIslandsFromRedis();
 		Island island = islands.get(ip);
 		if (island!=null) {
 			island.enableShell(true);			
@@ -106,6 +108,7 @@ public class Sea {
 	@Path("/islands/list")
 	public Response listIslands() {
 		try {
+			readIslandsFromRedis();
 			return Response.ok(mapper.writeValueAsString(islands.keySet())).build();
 		} catch (JsonProcessingException e) {
 			return returnException(e);
@@ -143,21 +146,6 @@ public class Sea {
 		} catch (JsonProcessingException e) {
 			return returnException(e);
 		}
-	}
-
-	@POST
-	@Path("/test")
-	public Response test() throws URISyntaxException {
-
-		Response response = Response.temporaryRedirect(new URI("http://10.59.144.147:8080/Sea/test2/adfsa/adsf/adsf"))
-				.build();
-		return response;
-	}
-
-	@POST
-	@Path("/test2/{ip: .*}")
-	public Response test2(String content, @PathParam("ip") String ip) throws URISyntaxException {
-		return Response.ok(ip + content).build();
 	}
 
 	@Path("/hub")
