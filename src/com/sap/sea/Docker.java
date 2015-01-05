@@ -16,6 +16,7 @@ import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -66,7 +67,9 @@ public class Docker {
 				webTarget = webTarget.queryParam(key, map.get(key).toArray());
 			}
 			Response response = webTarget.request().async().method(method, entity).get();
-			return response;
+			MultivaluedMap<String, Object> headers = response.getHeaders();
+			headers.remove("Transfer-Encoding");
+			return Response.fromResponse(response).replaceAll(headers).build();
 		} catch (InterruptedException | ExecutionException e) {
 			e.printStackTrace();
 			return Response.serverError().entity(ExceptionUtils.getStackTrace(e)).build();
