@@ -7,6 +7,7 @@ import java.util.concurrent.Future;
 
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.HttpMethod;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -14,6 +15,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -42,13 +44,19 @@ public class Docker {
 	@Path("{any: .*}")
 	public Response postRedirect(String entity, @PathParam("any") String any, @Context UriInfo info)
 			throws URISyntaxException {
-		return redirectProxy(any, HttpMethod.POST, Entity.json(entity), info);
+		if (entity.isEmpty()) {
+			entity = "{}";
+		}
+		return redirectProxy(any, HttpMethod.POST, Entity.text(entity), info);
 	}
 
 	@PUT
 	@Path("{any: .*}")
 	public Response putRedirect(String entity, @PathParam("any") String any, @Context UriInfo info)
 			throws URISyntaxException {
+		if (entity.isEmpty()) {
+			entity = "{}";
+		}
 		return redirectProxy(any, HttpMethod.PUT, Entity.json(entity), info);
 	}
 
