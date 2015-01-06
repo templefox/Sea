@@ -47,7 +47,7 @@ public class Docker {
 		if (entity.isEmpty()) {
 			entity = "{}";
 		}
-		return redirectProxy(any, HttpMethod.POST, Entity.text(entity), info);
+		return redirectProxy(any, HttpMethod.POST, Entity.json(entity), info);
 	}
 
 	@PUT
