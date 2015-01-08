@@ -39,7 +39,7 @@ public class Sea {
 	private static String jhost;
 	private static String jport;
 	private ObjectMapper mapper = new ObjectMapper();
-	private static final String VERSION="0.5";
+	private static final String VERSION = "0.5";
 
 	@Context
 	public void initialize(ServletContext context) throws Exception {
@@ -54,24 +54,35 @@ public class Sea {
 			throw new Exception("Jedis connect error", e);
 		}
 	}
-	
+
 	@GET
 	@Path("/version")
-	public String version(){
+	public String version() {
 		return VERSION;
 	}
 
+	private Boolean onReadRedis = false;
+
 	private void readIslandsFromRedis() {
-		try {
-			Set<String> loadedIslands = getJedis().smembers("ISLANDS");
-			for (String string : loadedIslands) {
-				Island island = mapper.readValue(string, Island.class);
-				if (island.check()) {
-					islands.put(island.getIp(), island);
+		if (!onReadRedis) {
+			synchronized (onReadRedis) {
+				if (!onReadRedis) {
+					onReadRedis = true;
+					try {
+						Set<String> loadedIslands = getJedis().smembers("ISLANDS");
+						for (String string : loadedIslands) {
+							Island island = mapper.readValue(string, Island.class);
+							if (island.check()) {
+								islands.put(island.getIp(), island);
+							}
+						}
+					} catch (IOException e) {
+						e.printStackTrace();
+					} finally {
+						onReadRedis = false;
+					}
 				}
 			}
-		} catch (IOException e) {
-			e.printStackTrace();
 		}
 	}
 
@@ -98,8 +109,8 @@ public class Sea {
 	public Island getIsland(@PathParam("ip") String ip) {
 		readIslandsFromRedis();
 		Island island = islands.get(ip);
-		if (island!=null) {
-			island.enableShell(true);			
+		if (island != null) {
+			island.enableShell(true);
 		}
 		return island;
 	}
@@ -162,7 +173,7 @@ public class Sea {
 		try {
 			if (!jedis.ping().equals("PONE")) {
 				connectJedis();
-			}			
+			}
 		} catch (Exception e) {
 			connectJedis();
 		}
