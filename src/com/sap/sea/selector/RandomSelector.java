@@ -1,5 +1,8 @@
 package com.sap.sea.selector;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.TreeMap;
 
 import javax.ws.rs.Path;
@@ -14,8 +17,10 @@ public class RandomSelector extends Selector {
 
 	@Path("/")
 	public Island select() {
-		for (String key : islands.keySet()) {
-			Island island = islands.get(key);
+		List<Island> islandss = new ArrayList<Island>();
+		islandss.addAll(islands.values());
+		Collections.shuffle(islandss);
+		for (Island island : islandss) {
 			island.enableShell(false);
 			if (island.available()) {
 				return island;

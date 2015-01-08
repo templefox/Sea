@@ -9,4 +9,5 @@ public abstract class Selector {
 	public Selector(TreeMap<String, Island> islands) {
 		this.islands = islands;
 	}
+	
 }
