@@ -1,23 +1,26 @@
 package com.sap.sea;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 
 import javax.security.sasl.AuthenticationException;
-import javax.ws.rs.DELETE;
+import javax.servlet.ServletContext;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.glassfish.jersey.server.ChunkedOutput;
 
+import com.google.common.io.Files;
 import com.trilead.ssh2.Connection;
 import com.trilead.ssh2.Session;
 import com.trilead.ssh2.StreamGobbler;
@@ -31,7 +34,7 @@ public class Node {
 	public Connection connection;
 
 	private Island island;
-
+	
 	public Node(Island island) {
 		this.island = island;
 	}
@@ -105,28 +108,13 @@ public class Node {
 
 	@POST
 	@Path("build")
-	public void build(final String buildPath,@Suspended final AsyncResponse asyncResponse) {
+	public void build(final String buildPath, @QueryParam("name") final String name,
+			@Suspended final AsyncResponse asyncResponse) {
 		new Thread() {
 			public void run() {
 				try {
-					String a = runSh("cd " + buildPath + " && docker build - < Dockerfile");
+					String a = runSh("cd " + buildPath + " && docker build -t " + name + " .");
 					asyncResponse.resume(a);
-				} catch (IOException e) {
-					e.printStackTrace();
-					asyncResponse.resume(e);
-				}
-			}
-		}.start();
-
-	}
-
-	@POST
-	@Path("async")
-	public void async(final String buildPath,@Suspended final AsyncResponse asyncResponse) {
-		new Thread() {
-			public void run() {
-				try {
-					asyncResponse.resume(runSh("cd " + buildPath + " && docker build - < Dockerfile"));
 				} catch (IOException e) {
 					e.printStackTrace();
 					asyncResponse.resume(e);
@@ -143,7 +131,10 @@ public class Node {
 			try {
 				connection = new Connection(ip.substring(0, ip.indexOf(":")));
 				connection.connect();
-				auth = connection.authenticateWithPassword(island.getUser(), island.getPass());
+				// auth = connection.authenticateWithPassword(island.getUser(),
+				// island.getPass());
+				String ppk = Sea.getJedis().get("private_key");
+				auth = connection.authenticateWithPublicKey(island.getUser(), ppk.toCharArray(), "");
 			} catch (IOException e) {
 				e.printStackTrace();
 				connection = null;

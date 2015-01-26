@@ -3,8 +3,6 @@ package com.sap.sea;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -21,14 +19,11 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.omg.CORBA.PUBLIC_MEMBER;
-
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.exceptions.JedisConnectionException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sap.sea.selector.RandomSelector;
 import com.sap.sea.selector.Selector;
 
 @Path("/")
@@ -39,8 +34,8 @@ public class Sea {
 	private static String jhost;
 	private static String jport;
 	private ObjectMapper mapper = new ObjectMapper();
-	private static final String VERSION = "0.5";
-
+	private static final String VERSION = "0.7";
+	
 	@Context
 	public void initialize(ServletContext context) throws Exception {
 		jhost = context.getInitParameter("dao.host");
