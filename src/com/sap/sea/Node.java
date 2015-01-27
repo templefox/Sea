@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+
 import javax.security.sasl.AuthenticationException;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -15,6 +16,7 @@ import javax.ws.rs.core.Response;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
+import com.google.common.base.Strings;
 import com.trilead.ssh2.Connection;
 import com.trilead.ssh2.Session;
 import com.trilead.ssh2.StreamGobbler;
@@ -28,7 +30,7 @@ public class Node {
 	public Connection connection;
 
 	private Island island;
-	
+
 	public Node(Island island) {
 		this.island = island;
 	}
@@ -104,7 +106,8 @@ public class Node {
 	@Path("build")
 	public void build(final String buildPath, @QueryParam("name") final String name,
 			@Suspended final AsyncResponse asyncResponse) {
-		new Thread() {
+		new Thread(new Runnable() {
+			@Override
 			public void run() {
 				try {
 					String a = runSh("cd " + buildPath + " && docker build -t " + name + " .");
@@ -114,8 +117,45 @@ public class Node {
 					asyncResponse.resume(e);
 				}
 			}
-		}.start();
+		}).start();
 
+	}
+
+	@POST
+	@Path("save")
+	public void save(@QueryParam("image") final String image, @QueryParam("file") final String file,
+			@Suspended final AsyncResponse asyncResponse) {
+		new Thread(new Runnable() {
+
+			@Override
+			public void run() {
+				try {
+					String a = runSh("docker save -o " + file + " " + image);
+					asyncResponse.resume(a);
+				} catch (IOException e) {
+					e.printStackTrace();
+					asyncResponse.resume(e);
+				}
+			}
+		}).start();
+	}
+
+	@POST
+	@Path("load")
+	public void load(@QueryParam("file") final String file, @Suspended final AsyncResponse asyncResponse) {
+		new Thread(new Runnable() {
+
+			@Override
+			public void run() {
+				try {
+					String a = runSh("docker load -i " + file);
+					asyncResponse.resume(a);
+				} catch (IOException e) {
+					e.printStackTrace();
+					asyncResponse.resume(e);
+				}
+			}
+		}).start();
 	}
 
 	public String runSh(String sh) throws IOException {
@@ -151,20 +191,44 @@ public class Node {
 
 		session.execCommand(sh);
 
-		InputStream inputStream = new StreamGobbler(session.getStdout());
-		BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
+		InputStream stdoutInputStream = new StreamGobbler(session.getStdout());
+		BufferedReader stdoutBufferedReader = new BufferedReader(new InputStreamReader(stdoutInputStream));
+
+		InputStream stderrInputStream = new StreamGobbler(session.getStderr());
+		BufferedReader stderrBufferedReader = new BufferedReader(new InputStreamReader(stderrInputStream));
 
 		StringBuilder builder = new StringBuilder();
-		builder.append(br.readLine());
-		while (true) {
-			String line = br.readLine();
-			if (line == null)
-				break;
-			builder.append(line);
-			builder.append(System.getProperty("line.separator"));
+		String firstLine = stdoutBufferedReader.readLine();
+		if (!Strings.isNullOrEmpty(firstLine)) {
+			builder.append(firstLine);
 		}
 
-		br.close();
+		int blankTime = 5;
+		while (true) {
+			String line = stdoutBufferedReader.readLine();
+			if (line == null && blankTime == 0)
+				break;
+			if (line != null) {
+				builder.append(line);
+				builder.append(System.getProperty("line.separator"));
+			}
+			--blankTime;
+		}
+
+		blankTime = 5;
+		while (true) {
+			String line = stderrBufferedReader.readLine();
+			if (line == null && blankTime == 0)
+				break;
+			if (line != null) {
+				builder.append(line);
+				builder.append(System.getProperty("line.separator"));
+			}
+			--blankTime;
+		}
+
+		stdoutBufferedReader.close();
+		stderrBufferedReader.close();
 		session.close();
 
 		return builder.toString();
