@@ -46,6 +46,7 @@
         <pathelement location="WebContent/WEB-INF/lib/slf4j-log4j12-1.7.7.jar"/>
         <pathelement location="WebContent/WEB-INF/lib/trilead-ssh2.jar"/>
         <pathelement location="WebContent/WEB-INF/lib/validation-api-1.1.0.Final.jar"/>
+    	<pathelement location="WebContent/WEB-INF/lib/guava-18.0.jar"/>
     </path>
     <path id="EAR Libraries.libraryclasspath"/>
     <path id="Sea.classpath">
