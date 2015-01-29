@@ -15,6 +15,8 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Response;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Strings;
 import com.trilead.ssh2.Connection;
@@ -26,7 +28,7 @@ public class Node {
 	public static final String FREE_GREP_MEM_AWK_PRINT_$2 = "free | grep Mem: | awk  '{print $2}'";
 	public static final String FREE_GREP_MEM_AWK_PRINT_$2_$3 = "free | grep Mem: | awk  '{print $3/$2 }'";
 	public static final String FREE_GREP_MEM_AWK_PRINT_$4 = "free | grep Mem: | awk  '{print $4 }'";
-
+	public final Logger logger = LoggerFactory.getLogger(Node.class);
 	public Connection connection;
 
 	private Island island;
@@ -206,25 +208,34 @@ public class Node {
 		int blankTime = 5;
 		while (true) {
 			String line = stdoutBufferedReader.readLine();
+			logger.info(line);
 			if (line == null && blankTime == 0)
+			{	
+				logger.info("END");
 				break;
+			}
 			if (line != null) {
 				builder.append(line);
 				builder.append(System.getProperty("line.separator"));
+			}else {
+				--blankTime;				
 			}
-			--blankTime;
 		}
 
 		blankTime = 5;
 		while (true) {
 			String line = stderrBufferedReader.readLine();
-			if (line == null && blankTime == 0)
+			logger.error(line);
+			if (line == null && blankTime == 0){
+				logger.error("END");
 				break;
+			}
 			if (line != null) {
 				builder.append(line);
 				builder.append(System.getProperty("line.separator"));
+			}else {
+				--blankTime;				
 			}
-			--blankTime;
 		}
 
 		stdoutBufferedReader.close();
