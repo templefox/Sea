@@ -34,7 +34,7 @@ public class Sea {
 	private static String jhost;
 	private static String jport;
 	private ObjectMapper mapper = new ObjectMapper();
-	private static final String VERSION = "0.7";
+	private static final String VERSION = "0.71";
 	
 	@Context
 	public void initialize(ServletContext context) throws Exception {
