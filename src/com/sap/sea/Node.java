@@ -106,9 +106,7 @@ public class Node {
 	@Path("checkurl")
 	public Response checkurl(@QueryParam("url") final String url){
 		try {
-			String command = "curl -k -X HEAD " + url;
-			//String command = "curl -k -X HEAD http://10.58.77.129:8089/?view&s=3&key=10.58.136.164%3A7777";
-			System.out.println("command ::"+command);
+			String command = "curl -k -X HEAD " + url + " | grep curl: | awk  '{print $3}'";
 			return Response.ok(runSh(command)).build();
 		} catch (IOException e) {
 			e.printStackTrace();
