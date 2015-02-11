@@ -106,7 +106,7 @@ public class Node {
 	@Path("checkurl")
 	public Response checkurl(@QueryParam("url") final String url){
 		try {
-			String command = "curl -k -X HEAD " + url + " | grep curl: | awk  '{print $3}'";
+			String command = "curl -k -X HEAD " + url;
 			return Response.ok(runSh(command)).build();
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -203,6 +203,7 @@ public class Node {
 		}
 
 		session.execCommand(sh);
+
 
 		InputStream stdoutInputStream = new StreamGobbler(session.getStdout());
 		BufferedReader stdoutBufferedReader = new BufferedReader(new InputStreamReader(stdoutInputStream));
