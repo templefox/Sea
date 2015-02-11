@@ -106,7 +106,7 @@ public class Node {
 	@Path("checkurl")
 	public Response checkurl(@QueryParam("url") final String url){
 		try {
-			String command = "curl " + url;
+			String command = "curl -k -X HEAD " + url;
 			return Response.ok(runSh(command)).build();
 		} catch (IOException e) {
 			e.printStackTrace();
