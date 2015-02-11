@@ -226,8 +226,9 @@ public class Node {
 			if (line != null) {
 				builder.append(line);
 				builder.append(System.getProperty("line.separator"));
-			}
+			}if(line==null){
 			--blankTime;
+			}
 		}
 
 		blankTime = 5;
@@ -239,7 +240,9 @@ public class Node {
 				builder.append(line);
 				builder.append(System.getProperty("line.separator"));
 			}
+			if(line == null){
 			--blankTime;
+			}
 		}
 
 		stdoutBufferedReader.close();
